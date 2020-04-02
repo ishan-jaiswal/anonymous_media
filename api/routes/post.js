@@ -139,13 +139,13 @@ router.put("/upcount/:id",(req,res)=>{
     upCount:1//update problem
   });
 });
-router.put("/downcount",(req,res)=>{
+router.put("/downcount/:id",(req,res)=>{
   const id = req.params.id;
   const result=Post.findByIdAndUpdate(id,{
     downCount:1//update problem
   });
 });
-router.put("/comment",(req,res)=>{
+router.put("/comment/:id",(req,res)=>{
   const id = req.params.id;
   const result=Post.findByIdAndUpdate(id,{
     comments:1//update problem
