@@ -5,9 +5,7 @@ const userRoutes = require('./api/routes/user');
 const postRoutes=require('./api/routes/post');
 const communityRoutes=require('./api/routes/community');
 
-
-
-mongoose.connect('mongodb://localhost/media',{ useNewUrlParser: true ,useUnifiedTopology:true,useCreateIndex: true})
+mongoose.connect('mongodb+srv://anonymous_media:'+process.env.MONGO_ATLAS_PW+'@cluster0-9bc8x.mongodb.net/test?retryWrites=true&w=majority',{ useNewUrlParser: true ,useUnifiedTopology:true,useCreateIndex: true})
   .then(()=>{
     console.log('Connected to mongodb');
   })
