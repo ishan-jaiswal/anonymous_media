@@ -2,43 +2,47 @@ const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
 const Community = require("../models/community");
-//const checkAuth = require("../middleware/check-auth");
+const checkAuth = require("../middleware/check-auth");
 
-/*const db=mongoose.connection
-  db.once('open',async()=>{
-    if(await Community.countDocuments().exec()>0) return
+  
+  function paginatedResults(model) {
+    return async (req, res, next) => {
+      const page = parseInt(req.query.page)
+      const limit = parseInt(req.query.limit)
+  
+      const startIndex = (page - 1) * limit
+      const endIndex = page * limit
+  
+      const results = {}
+  
+      if (endIndex < await model.countDocuments().exec()) {
+        results.next = {
+          page: page + 1,
+          limit: limit
+        }
+      }
+      
+      if (startIndex > 0) {
+        results.previous = {
+          page: page - 1,
+          limit: limit
+        }
+      }
+      try {
+        results.results = await model.find().limit(limit).skip(startIndex).exec()
+        res.paginatedResults = results
+        next()
+      } catch (e) {
+        res.status(500).json({ message: e.message })
+      }
+    }
+  }  
 
-    Promise.all()
-  })*/
-  router.get("/",async (req,res)=>{
-    //router.get("/",paginatedResults(Post),(req,res)=>{
-      /*const page=req.query.page
-      const limit=req.query.limit
-      const start=(page-1)*limit
-      const end=(page)*limit
-      const result=Post.slice(start,end)
-      const result = await Post.find().sort('-createdOn');*/
-      //res.json(res.paginatedResults);
-      Community.find()
-        .exec()
-        .then(docs => {
-          console.log(docs);
-          //   if (docs.length >= 0) {
-          res.status(200).json(docs);
-          //   } else {
-          //       res.status(404).json({
-          //           message: 'No entries found'
-          //       });
-          //   }
-        })
-        .catch(err => {
-          console.log(err);
-          res.status(500).json({
-            error: err
-          });
-        });
+    router.get("/",checkAuth,paginatedResults(Community),(req,res)=>{    
+      res.json(res.paginatedResults);  
     });
-    router.get("/:id",(req,res)=>{
+    
+    router.get("/:id",checkAuth,(req,res)=>{
       const id = req.params.id;
       Community.findById(id)
         .exec()
@@ -65,7 +69,9 @@ router.post("/new_community",(req,res)=>{
         _id: new mongoose.Types.ObjectId(),
         name:req.body.name,
         subCount:0,
-        desc:req.body.desc        
+        desc:req.body.desc,
+        mods:req.body.mods,
+        rules: req.body.rules        
     });
     community
         .save()
@@ -82,36 +88,72 @@ router.post("/new_community",(req,res)=>{
             });
         });
 });
-router.post("/up",(req,res)=>{
-    const result=Community.find({_id: req.body.id})
-    .exec();
-    if (result.length >= 1) {
-        result.subCount+=1;
-        result.subscribers.append(res.body.suscriber);
-        return res.status(409).json({
-          message: "Community exists"
-        });        
+
+router.post("/up/:id",checkAuth,async(req,res)=>{
+  const id = req.params.id;
+  const result=await Community.findById(id);
+  const flag=await Community.findByIdAndUpdate(id,
+    {       
+      subCount : result.subCount+1,
+      subscribers:result.subscribers.append(req.body.id)     
+    });
+    if(flag)
+    {
+      res.status(200).send("Updated");
     }
+    else
+    {
+      return res.status(404).send("Error not found");
+    } 
 });
-router.post("/down",(req,res)=>{
-    const result=Community.find({_id: req.body.id})
-    .exec();
-    if (result.length >= 1) {
-        result.subCount-=1;
-        result.subscribers.remove(res.body.suscriber);
-        return res.status(409).json({
-          message: "Community exists"
-        });        
+
+router.post("/down/:id",checkAuth,async(req,res)=>{
+  const id = req.params.id;
+  const result=await Community.findById(id);
+  const flag=await Community.findByIdAndUpdate(id,
+    {       
+      subCount : result.subCount-1,
+      subscribers:result.subscribers.remove(req.body.id)     
+    });
+    if(flag)
+    {
+      res.status(200).send("Updated");
     }
+    else
+    {
+      return res.status(404).send("Error not found");
+    } 
 });
-router.post("/post",(req,res)=>{
-    const result=Community.find({_id: req.body.id})
-    .exec();
-    if (result.length >= 1) {
-        result.post.append(req.body.post);
-        return res.status(409).json({
-          message: "Community exists"
-        });        
+
+router.put("/post/:id",checkAuth,async(req,res)=>{
+  const id = req.params.id;
+  const result=await Community.findById(id);
+  const flag=await Community.findByIdAndUpdate(id,
+    {             
+      post:result.post.append(req.body.post)     
+    });
+    if(flag)
+    {
+      res.status(200).send("Updated");
     }
+    else
+    {
+      return res.status(404).send("Error not found");
+    } 
+});
+
+router.delete("/:id",checkAuth, (req, res) => {
+  const id = req.params.id;
+  Community.remove({ _id: id })
+    .exec()
+    .then(result => {
+      res.status(200).json(result);
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({
+        error: err
+      });
+    });
 });
 module.exports = router; 

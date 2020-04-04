@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const communitySchema = mongoose.Schema({
     _id: mongoose.Schema.Types.ObjectId,
      name: String,
-     mods: [Number],
+     mods: [String],
      subCount: Number,
      subscribers: [String],
      posts: [String],

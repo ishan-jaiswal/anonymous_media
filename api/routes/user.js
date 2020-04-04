@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 const User = require("../models/user");
 const jwt = require("jsonwebtoken");
+const checkAuth = require("../middleware/check-auth");
 const nodemailer = require('nodemailer');
 
 var transporter = nodemailer.createTransport({
@@ -13,13 +14,6 @@ var transporter = nodemailer.createTransport({
     pass: ''//set the password
   }
 });
-
-/*const db=mongoose.connection
-  db.once('open',async()=>{
-    if(await User.countDocuments().exec()>0) return
-
-    Promise.all()
-  })*/
 
 router.post("/signup", (req, res) => {
   User.find({ email: req.body.email })
@@ -124,7 +118,27 @@ router.post("/login", (req, res, next) => {
     });
 });
 
-router.delete("/:userId", (req, res, next) => {
+router.patch("/:id",checkAuth,(req, res, next) => {
+  const id = req.params.id;
+  const updateOps = {};
+  for (const ops of req.body) {
+    updateOps[ops.propName] = ops.value;
+  }
+  User.update({ _id: id }, { $set: updateOps })
+    .exec()
+    .then(result => {
+      console.log(result);
+      res.status(200).json(result);
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({
+        error: err
+      });
+    });
+});
+
+router.delete("/:userId",checkAuth,(req, res, next) => {
   User.remove({ _id: req.params.userId })
     .exec()
     .then(result => {

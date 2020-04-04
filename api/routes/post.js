@@ -1,27 +1,26 @@
 const express = require("express");
 const router = express.Router();
 const mongoose = require("mongoose");
-const multer=require('multer');
+//const multer=require('multer');
 const Post = require("../models/post");
-//const checkAuth = require("../middleware/check-auth");
+const checkAuth = require("../middleware/check-auth");
 
-const storage=multer.diskStorage({
-  destination: function(req,file,cb){
-    cb(null,'./uploads/');
+/*const storage = multer.diskStorage({
+  destination: function(req, file, cb) {
+    cb(null, './uploads/');
   },
-  filename: function(req,file,cb){
-    cb(nukll,new Date().toISOString()+ file.originalname);
+  filename: function(req, file, cb) {
+    cb(null, new Date().toISOString());
   }
 });
-const upload=multer({storage:storage,limits:{
-  fileSize:1024*1024*5 //5mb
-}}); 
-/*const db=mongoose.connection
-  db.once('open',async()=>{
-    if(await Post.countDocuments().exec()>0) return
 
-    Promise.all()
-  })*/
+const upload=multer({storage:storage,
+  limits:{
+   fileSize:1024*1024*5 }//5mb upload limit
+  }); */
+
+
+
 function paginatedResults(model) {
   return async (req, res, next) => {
     const page = parseInt(req.query.page)
@@ -55,35 +54,10 @@ function paginatedResults(model) {
   }
 }
 
-router.get("/",async (req,res)=>{
-//router.get("/",paginatedResults(Post),(req,res)=>{
-  /*const page=req.query.page
-  const limit=req.query.limit
-  const start=(page-1)*limit
-  const end=(page)*limit
-  const result=Post.slice(start,end)
-  const result = await Post.find().sort('-createdOn');*/
-  //res.json(res.paginatedResults);
-  Post.find()
-    .exec()
-    .then(docs => {
-      console.log(docs);
-      //   if (docs.length >= 0) {
-      res.status(200).json(docs);
-      //   } else {
-      //       res.status(404).json({
-      //           message: 'No entries found'
-      //       });
-      //   }
-    })
-    .catch(err => {
-      console.log(err);
-      res.status(500).json({
-        error: err
-      });
-    });
+router.get("/",checkAuth,paginatedResults(Post),(req,res)=>{
+  res.json(res.paginatedResults);
 });
-router.get("/:id",(req,res)=>{
+router.get("/:id",checkAuth,(req,res)=>{
   const id = req.params.id;
   Post.findById(id)
     .exec()
@@ -105,8 +79,7 @@ router.get("/:id",(req,res)=>{
 
 
 router.post("/new_post",(req,res)=>{
-//router.post("/new_post",upload.single('postImage'),(req,res)=>{
-  //console.log(req.file);
+//router.post("/new_post",upload.single('postImage'),(req,res)=>{ 
   
     const post = new Post({
         _id: new mongoose.Types.ObjectId(),
@@ -133,22 +106,71 @@ router.post("/new_post",(req,res)=>{
             });
         });
 });
-router.put("/upcount/:id",(req,res)=>{
+
+router.put("/up/:id",checkAuth,async(req,res)=>{
   const id = req.params.id;
-  const result=Post.findByIdAndUpdate(id,{
-    upCount:1//update problem
-  });
+  const result=await Post.findById(id);
+  const flag=await Post.findByIdAndUpdate(id,
+    {       
+      upCount : result.upCount+1,     
+    });
+    if(flag)
+    {
+      res.status(200).send("Updated");
+    }
+    else
+    {
+      return res.status(404).send("Error not found");
+    }  
 });
-router.put("/downcount/:id",(req,res)=>{
+
+router.put("/down/:id",checkAuth,async(req,res)=>{
   const id = req.params.id;
-  const result=Post.findByIdAndUpdate(id,{
-    downCount:1//update problem
-  });
+  const result=await Post.findById(id);
+  const flag=await Post.findByIdAndUpdate(id,
+    {       
+      downCount : result.downCount+1,     
+    });
+    if(flag)
+    {
+      res.status(200).send("Updated");
+    }
+    else
+    {
+      return res.status(404).send("Error not found");
+    }  
 });
-router.put("/comment/:id",(req,res)=>{
+
+router.put("/comment/:id",checkAuth,async(req,res)=>{
   const id = req.params.id;
-  const result=Post.findByIdAndUpdate(id,{
-    comments:1//update problem
-  });
+  const result=await Post.findById(id);
+  const flag=await Post.findByIdAndUpdate(id,
+    {       
+      comments : result.comments+1,     
+    });
+    if(flag)
+    {
+      res.status(200).send("Updated");
+    }
+    else
+    {
+      return res.status(404).send("Error not found");
+    }  
 });
+
+router.delete("/:id",checkAuth, (req, res) => {
+  const id = req.params.id;
+  Post.remove({ _id: id })
+    .exec()
+    .then(result => {
+      res.status(200).json(result);
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({
+        error: err
+      });
+    });
+});
+
 module.exports = router; 
