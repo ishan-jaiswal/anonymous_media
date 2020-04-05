@@ -1,5 +1,6 @@
 const express = require("express");
 const app = express();
+const bodyParser=require('body-parser');
 const mongoose = require("mongoose");
 const userRoutes = require('./api/routes/user');
 const postRoutes=require('./api/routes/post');
@@ -11,7 +12,9 @@ mongoose.connect('mongodb+srv://anonymous_media:'+process.env.MONGO_ATLAS_PW+'@c
   })
   .catch(err=>console.log('Could not connect',err.message));
 
-//app.use('/uploads',express.static('uploads'));
+app.use('/uploads',express.static('uploads'));
+app.use(bodyParser.urlencoded({limit: '50mb', extended: false }));
+app.use(bodyParser.json({limit: '50mb', extended: true}));
 app.use(express.json());
 app.use("/user", userRoutes);
 app.use("/post", postRoutes);

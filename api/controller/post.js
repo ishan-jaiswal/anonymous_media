@@ -62,8 +62,8 @@ exports.newpost=(req,res)=>{
         content:req.body.content,
         upCount:0,
         downCount:0,
-        comments:0
-        //postImage:req.file.path
+        comments:0,
+        postImage:req.file["postImage"]
     });
     post
         .save()
