@@ -26,7 +26,6 @@ router.get("/",checkAuth,PostController.paginatedResults(Post),(req,res)=>{
 router.get("/:id",checkAuth,PostController.fetchspecific);
 
 router.post("/new_post",checkAuth,upload.single('postImage'),PostController.newpost);
-//router.post("/new_post",PostController.newpost);
 
 router.put("/up/:id",checkAuth,);
 
